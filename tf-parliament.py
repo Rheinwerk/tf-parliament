@@ -72,12 +72,19 @@ def mock_iam_statement_from_tf(statement_data):
             field_values = statement_data.get(field['tf_key'])[0]
 
             if isinstance(field_values, list):
-                field_values = list(map(lambda x: re.sub('\${.*?}', field['mock_value'], x), field_values))
+                field_values = list(map(lambda x: mock_field_value(x, field), field_values))
             else:
-                field_values = re.sub('\${.*?}', field['mock_value'], field_values)
+                field_values = mock_field_value(field_values, field)
 
             mock_iam_statement[field['iam_key']] = field_values
     return mock_iam_statement
+
+
+def mock_field_value(x, field):
+    if re.match(r'\${aws_s3_bucket\..+\.arn}', x):
+        return re.sub(r'\${aws_s3_bucket\..+\.arn}', "arn:aws:s3:::mockbucket", x)
+    else:
+        return re.sub(r'\${.*?}', field['mock_value'], x)
 
 
 def validate_file(filename):
